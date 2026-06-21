@@ -640,24 +640,33 @@
         </div>
       </div>
     </div>
-    <form class="contact-form" onsubmit="handleSubmit(event)">
+    <!--
+  FORMSPREE SETUP (5 mins, one-time):
+  1. Go to https://formspree.io → sign up free
+  2. Click "New Form" → name it "A2D Quote Request"
+  3. Copy your form ID (e.g. xpzgkrqw)
+  4. Replace YOUR_FORM_ID in the action below with it
+-->
+<form class="contact-form" id="quoteForm"
+      action="https://formspree.io/f/xeebjkqr"
+      method="POST">
       <div class="form-row">
         <div class="form-field">
           <label>First Name</label>
-          <input type="text" placeholder="John" required />
+          <input type="text" name="first_name" placeholder="John" required />
         </div>
         <div class="form-field">
           <label>Last Name</label>
-          <input type="text" placeholder="Smith" required />
+          <input type="text" name="last_name" placeholder="Smith" required />
         </div>
       </div>
       <div class="form-field">
         <label>Phone Number</label>
-        <input type="tel" placeholder="(555) 000-0000" required />
+        <input type="tel" name="phone" placeholder="(555) 000-0000" required />
       </div>
       <div class="form-field">
         <label>Service Needed</label>
-        <select required>
+        <select name="service" required>
           <option value="" disabled selected>Select a service</option>
           <option>Pressure Washing</option>
           <option>Automotive Detailing</option>
@@ -667,9 +676,18 @@
       </div>
       <div class="form-field">
         <label>Tell Us More</label>
-        <textarea rows="4" placeholder="Describe what you need — property size, vehicle type, any specific concerns..."></textarea>
+        <textarea name="message" rows="4" placeholder="Describe what you need — property size, vehicle type, any specific concerns..."></textarea>
       </div>
-      <button type="submit" class="btn-primary" style="width:100%; font-size:0.75rem;">
+      <input type="hidden" name="_subject" value="New Quote Request — A2D Professional Kleening" />
+
+      <div id="form-success" style="display:none; padding:1rem; background:rgba(0,160,60,0.12); border:1px solid rgba(0,160,60,0.3); color:#4ade80; font-family:'Space Mono',monospace; font-size:0.72rem; letter-spacing:0.08em;">
+        ✓ Request sent! We'll be in touch shortly.
+      </div>
+      <div id="form-error" style="display:none; padding:1rem; background:rgba(192,57,43,0.12); border:1px solid rgba(192,57,43,0.3); color:#f87171; font-family:'Space Mono',monospace; font-size:0.72rem; letter-spacing:0.08em;">
+        ✗ Something went wrong. Please try again or call us directly.
+      </div>
+
+      <button type="submit" id="submitBtn" class="btn-primary" style="width:100%; font-size:0.75rem;">
         Send My Request →
       </button>
     </form>
@@ -685,18 +703,47 @@
 </footer>
 
 <script>
-  function handleSubmit(e) {
-    e.preventDefault();
-    const btn = e.target.querySelector('button[type="submit"]');
-    btn.textContent = '✓ Request Sent!';
-    btn.style.background = '#C0392B';
-    btn.disabled = true;
-    setTimeout(() => {
-      btn.textContent = 'Send My Request →';
-      btn.style.background = '';
-      btn.disabled = false;
-      e.target.reset();
-    }, 3000);
+  // Formspree async submission
+  const quoteForm = document.getElementById('quoteForm');
+  if (quoteForm) {
+    quoteForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      const successMsg = document.getElementById('form-success');
+      const errorMsg = document.getElementById('form-error');
+
+      btn.textContent = 'Sending...';
+      btn.disabled = true;
+      successMsg.style.display = 'none';
+      errorMsg.style.display = 'none';
+
+      try {
+        const response = await fetch(quoteForm.action, {
+          method: 'POST',
+          body: new FormData(quoteForm),
+          headers: { 'Accept': 'application/json' }
+        });
+
+        if (response.ok) {
+          successMsg.style.display = 'block';
+          quoteForm.reset();
+          btn.textContent = '✓ Sent!';
+          btn.style.background = '#166534';
+          setTimeout(() => {
+            btn.textContent = 'Send My Request →';
+            btn.style.background = '';
+            btn.disabled = false;
+            successMsg.style.display = 'none';
+          }, 5000);
+        } else {
+          throw new Error('Server error');
+        }
+      } catch (err) {
+        errorMsg.style.display = 'block';
+        btn.textContent = 'Send My Request →';
+        btn.disabled = false;
+      }
+    });
   }
 
   const observer = new IntersectionObserver((entries) => {
